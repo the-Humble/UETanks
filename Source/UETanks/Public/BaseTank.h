@@ -21,7 +21,7 @@ protected:
 
 	//Mesh properties
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* TankMeshComponent;
+	UStaticMeshComponent* TankBodyMeshComponent;
 	
 	//Movement properties
 	UPROPERTY(VisibleAnywhere, Category="Movement")

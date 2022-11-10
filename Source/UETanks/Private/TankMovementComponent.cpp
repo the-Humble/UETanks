@@ -72,27 +72,47 @@ void UTankMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void UTankMovementComponent::RotateTank(FVector TargetDirection, float DeltaTime)
 {
+
 	FRotator FinalRotation = FRotationMatrix::MakeFromX(TargetDirection).Rotator();
 	PawnOwner->SetActorRotation(FMath::RInterpConstantTo(PawnOwner->GetActorRotation(), FinalRotation, DeltaTime, RotateSpeed));
-
+	
 	DrawDebugLine(GetWorld(), PawnOwner->GetActorLocation(),PawnOwner->GetActorLocation()+TargetDirection*100, FColor::Red);
 	DrawDebugLine(GetWorld(), PawnOwner->GetActorLocation(),PawnOwner->GetActorLocation()+PawnOwner->GetActorForwardVector()*100, FColor::Green);
+
+	ConsumeInputVector();
 }
 
 
 void UTankMovementComponent::ApplyControlInputToVelocity(float DeltaTime)
 {
 	const FVector ControlAcceleration = GetPendingInputVector().GetClampedToMaxSize(1.f);
-	const FVector InputDirection = ControlAcceleration.GetSafeNormal();
+	FVector InputDirection = ControlAcceleration.GetSafeNormal();
 
-	float ForwardDotInput = FVector::DotProduct(PawnOwner->GetActorForwardVector(), InputDirection);
-	if(abs(ForwardDotInput)<0.95f && InputDirection.Size() >0.05f)
+	const float ForwardDotInput = FVector::DotProduct(PawnOwner->GetActorForwardVector(), InputDirection);
+	const float BackwardDotInput = FVector::DotProduct(-PawnOwner->GetActorForwardVector(), InputDirection);
+
+	float FinalDotInput = ForwardDotInput > BackwardDotInput ? ForwardDotInput : BackwardDotInput;
+
+	if(abs(FinalDotInput)<0.999f && InputDirection.Size()>0.05f)
 	{
-		DrawDebugLine(GetWorld(), PawnOwner->GetActorLocation(),PawnOwner->GetActorLocation()+InputDirection*100, FColor::Red);
+		Velocity = FVector::ZeroVector;
+		DrawDebugLine(GetWorld(), PawnOwner->GetActorLocation(),PawnOwner->GetActorLocation()+InputDirection*200, FColor::Blue);
+		if(FinalDotInput == BackwardDotInput)
+		{
+			InputDirection = -InputDirection;
+		}
+
 		RotateTank(InputDirection, DeltaTime);
-		ConsumeInputVector();
 		return;
 	}
+
+	const float AnalogInputModifier = (ControlAcceleration.SizeSquared() > 0.f ? ControlAcceleration.Size() : 0.f);
+	const float MaxPawnSpeed = GetMaxSpeed() * AnalogInputModifier;
+
+	// Apply acceleration and clamp velocity magnitude.
+	const float NewMaxSpeed = (IsExceedingMaxSpeed(MaxPawnSpeed)) ? Velocity.Size() : MaxPawnSpeed;
+	Velocity = ControlAcceleration * FMath::Abs(MaxMoveSpeed);
+	
 	ConsumeInputVector();
 }
 

@@ -12,7 +12,7 @@ ABaseTank::ABaseTank()
 	PrimaryActorTick.bCanEverTick = true;
 
 	TankMovementComponent = CreateDefaultSubobject<UTankMovementComponent>(TEXT("Tank Movement Controller"));
-	TankMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tank Mesh"));
+	TankBodyMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tank Mesh"));
 }
 
 // Called when the game starts or when spawned
